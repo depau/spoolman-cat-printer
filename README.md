@@ -10,6 +10,8 @@ available only in Chromium-based browsers, such as Chrome and Edge.
 
 ![Static app](https://img.shields.io/badge/deployment-static-blue) ![Web Bluetooth](https://img.shields.io/badge/Web%20Bluetooth-required-orange)
 
+![Screenshot](screenshot.png)
+
 ## Features
 
 - **Spoolman integration** — fetches live spool inventory over HTTP, searches
@@ -41,6 +43,12 @@ available only in Chromium-based browsers, such as Chrome and Edge.
 | Spoolman    | Any reachable Spoolman instance (local network or remote) |
 
 ## Getting started
+
+If you just want to use the app, head over to
+the [GitHub Pages site](https://depau.github.io/spoolman-cat-printer/) and set
+your Spoolman URL!
+
+To build the app from source, follow these steps:
 
 ```bash
 # Install dependencies
