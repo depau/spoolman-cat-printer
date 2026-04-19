@@ -84,6 +84,8 @@ function ScaledIframe({srcDoc, widthPx, heightPx, dpi, landscape, widthMm, heigh
   useEffect(() => {
     const el = probeRef.current;
     if (!el) return;
+    // naturalPx: how wide the iframe would be in CSS px at scale=1
+    // (widthMm mm converted to CSS px at 96 dpi)
     const naturalPx = widthMm * 96 / 25.4;
     const obs = new ResizeObserver(([entry]) => {
       const available = entry.contentRect.width;
@@ -110,6 +112,32 @@ function ScaledIframe({srcDoc, widthPx, heightPx, dpi, landscape, widthMm, heigh
   const totalZoom = baseZoom * scale;
   const iframeH = contentHeight ?? 9999;
 
+  // CSS px dimensions of the iframe at native (pre-scale) size
+  const nativeW = widthPx;
+  const nativeH = iframeH;
+
+  // CSS px dimensions after applying totalZoom
+  const scaledW = nativeW * totalZoom;
+  const scaledH = nativeH * totalZoom;
+
+  // We use transform:scale instead of CSS zoom because zoom is unreliable on
+  // iframes in mobile browsers (especially HiDPI Android Chrome). transform:scale
+  // does not shrink the layout box, so we explicitly size the wrapper to the
+  // post-scale dimensions and use overflow:hidden + a negative margin trick so
+  // the un-scaled iframe DOM footprint doesn't push out the container.
+  const iframeStyle: React.CSSProperties = {
+    display: 'block',
+    border: 'none',
+    width: `${nativeW}px`,
+    height: `${nativeH}px`,
+    transformOrigin: 'top left',
+    transform: `scale(${totalZoom})`,
+    // Negative margin collapses the extra space the un-scaled layout box would
+    // occupy beyond the scaled size.
+    marginRight: `${scaledW - nativeW}px`,
+    marginBottom: `${scaledH - nativeH}px`,
+  };
+
   const iframe = (
     <iframe
       ref={iframeRef}
@@ -120,18 +148,12 @@ function ScaledIframe({srcDoc, widthPx, heightPx, dpi, landscape, widthMm, heigh
       scrolling="no"
       title="Label preview"
       onLoad={handleLoad}
-      style={{
-        display: 'block',
-        border: 'none',
-        width: `${widthPx}px`,
-        height: `${iframeH}px`,
-        zoom: totalZoom,
-      }}
+      style={iframeStyle}
     />
   );
 
   if (landscape && heightMm != null) {
-    // Portrait iframe layout size after zoom:
+    // Portrait iframe layout size after scale:
     //   W = widthPx  * totalZoom  ≈ heightMm mm in CSS px
     //   H = iframeH * totalZoom  ≈ widthMm  mm in CSS px
     // Center inside widthMm × heightMm, rotate 90° CW → corners snap to container.
@@ -148,12 +170,11 @@ function ScaledIframe({srcDoc, widthPx, heightPx, dpi, landscape, widthMm, heigh
           height: `${heightMm}mm`,
           position: 'relative',
           overflow: 'hidden',
-          zoom: scale,
         }}>
           <div style={{
             position: 'absolute',
-            left: left / scale,
-            top: top / scale,
+            left: left,
+            top: top,
             transform: 'rotate(90deg)',
             transformOrigin: 'center center',
           }}>
@@ -171,7 +192,10 @@ function ScaledIframe({srcDoc, widthPx, heightPx, dpi, landscape, widthMm, heigh
                 border: 'none',
                 width: `${widthPx}px`,
                 height: `${iframeH}px`,
-                zoom: baseZoom,
+                transformOrigin: 'top left',
+                transform: `scale(${baseZoom})`,
+                marginRight: `${widthPx * baseZoom - widthPx}px`,
+                marginBottom: `${iframeH * baseZoom - iframeH}px`,
               }}
             />
           </div>
@@ -181,7 +205,7 @@ function ScaledIframe({srcDoc, widthPx, heightPx, dpi, landscape, widthMm, heigh
   }
 
   return (
-    <div ref={probeRef} style={{width: '100%'}}>
+    <div ref={probeRef} style={{width: '100%', overflow: 'hidden'}}>
       {iframe}
     </div>
   );
@@ -374,25 +398,25 @@ export function PreviewModeToggle({
     <div className="inline-flex rounded border border-input overflow-hidden text-xs">
       <button
         type="button"
-        onClick={() => onChange('html')}
-        className={`px-2 py-0.5 transition-colors ${
-          mode === 'html'
-            ? 'bg-primary text-primary-foreground'
-            : 'bg-background text-muted-foreground hover:text-foreground'
-        }`}
-      >
-        HTML
-      </button>
-      <button
-        type="button"
         onClick={() => onChange('png')}
-        className={`px-2 py-0.5 border-l border-input transition-colors ${
+        className={`px-2 py-0.5 transition-colors ${
           mode === 'png'
             ? 'bg-primary text-primary-foreground'
             : 'bg-background text-muted-foreground hover:text-foreground'
         }`}
       >
         PNG
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange('html')}
+        className={`px-2 py-0.5 border-l border-input transition-colors ${
+          mode === 'html'
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-background text-muted-foreground hover:text-foreground'
+        }`}
+      >
+        HTML
       </button>
     </div>
   );

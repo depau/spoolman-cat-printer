@@ -133,7 +133,7 @@ function AppInner() {
               rel="noreferrer"
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
-              <ExternalLink className="h-3.5 w-3.5 inline-block"/> Spoolman
+              <ExternalLink className="h-3.5 w-3.5 inline-block"/><span className="hidden sm:inline"> Spoolman</span>
             </a>
           </div>
         </div>

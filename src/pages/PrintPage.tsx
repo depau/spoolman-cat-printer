@@ -206,7 +206,7 @@ function ProfilesSection({ onEditSettings }: { onEditSettings: (tab?: string) =>
 export function PrintPage({ onNavigateSettings }: { onNavigateSettings: (tab?: string) => void }) {
   const { showDebugLog } = useSettingsStore();
   const { clear: clearDebugLog } = useDebugStore();
-  const [previewMode, setPreviewMode] = useState<LabelPreviewMode>('html');
+  const [previewMode, setPreviewMode] = useState<LabelPreviewMode>('png');
 
   return (
     <div className="flex flex-col gap-3 lg:flex-row lg:gap-4 p-3 lg:p-4 max-w-7xl mx-auto w-full">
