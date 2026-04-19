@@ -90,7 +90,8 @@ export function generateEasyCss(label: LabelProfile, columnGapPx = 4): string {
   background: #fff;
   display: flex;
   flex-direction: column;
-  justify-content: ${valign};${borderPx > 0 ? `\n  border: ${borderPx}px solid ${borderColor};` : ''}
+  justify-content: ${valign};
+  border: ${borderPx}px solid ${borderColor};
 }
 
 p:not(:last-child) {
@@ -280,13 +281,15 @@ export async function buildLabelHtmlDoc(
     `background: #fff`,
     `width: ${dims.renderWidthPx}px`,
     dims.renderHeightPx !== null ? `height: ${dims.renderHeightPx}px` : '',
+    dims.renderHeightPx !== null ? `max-height: ${dims.renderHeightPx}px` : '',
+    dims.renderHeightPx !== null ? `min-height: ${dims.renderHeightPx}px` : '',
     `padding: ${dims.marginTopPx}px ${dims.marginRightPx}px ${dims.marginBottomPx}px ${dims.marginLeftPx}px`,
     `overflow: hidden`,
     `display: flex`,
     `flex-direction: column`,
     `justify-content: ${valign}`,
     `box-sizing: border-box`,
-    borderPx > 0 ? `border: ${borderPx}px solid ${borderColor}` : '',
+    `border: ${borderPx}px solid ${borderColor}`,
   ].filter(Boolean).join('; ');
 
   const html = `<!DOCTYPE html>
@@ -345,9 +348,10 @@ export async function renderLabel(
     await iDoc.fonts.ready;
 
     const root = iDoc.querySelector('.label-root') as HTMLElement;
-    const captureHeight = heightPx ?? root.scrollHeight;
+    const isUnlimited = heightPx === null;
+    const captureHeight = isUnlimited ? root.scrollHeight : heightPx;
 
-    if (!heightPx) {
+    if (isUnlimited) {
       iframe.style.height = `${captureHeight}px`;
     }
 

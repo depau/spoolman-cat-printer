@@ -28,12 +28,43 @@ async function syncRetract(printer: CatPrinter, lines: number): Promise<void> {
   await printer.getDeviceState();
 }
 
-/** Print bitmap and sync */
+/** Print bitmap and sync.
+ *
+ * Unlike printer.printBitmap(), this implementation sends feed(1) for blank
+ * (all-zero) rows instead of silently skipping them.  Skipping blank rows
+ * causes the paper NOT to advance for those lines, so labels with no border
+ * (where top/bottom margin rows are pure white) end up shorter than expected,
+ * breaking alignment.
+ */
 async function syncPrintBitmap(
   printer: CatPrinter,
   label: RenderedLabel
 ): Promise<void> {
-  await printer.printBitmap({ width: label.width, height: label.height, data: label.bitmap });
+  const pitch = Math.ceil(label.width / 8);
+  let pendingFeeds = 0;
+
+  for (let row = 0; row < label.height; row++) {
+    const offset = row * pitch;
+    const line = label.bitmap.slice(offset, offset + pitch);
+    const isBlank = line.every((b) => b === 0);
+
+    if (isBlank) {
+      pendingFeeds++;
+    } else {
+      // Flush accumulated blank rows as a single feed command.
+      if (pendingFeeds > 0) {
+        await printer.feed(pendingFeeds);
+        pendingFeeds = 0;
+      }
+      await printer.draw(line);
+    }
+  }
+
+  // Trailing blank rows: feed so paper advances to the correct position.
+  if (pendingFeeds > 0) {
+    await printer.feed(pendingFeeds);
+  }
+
   await printer.getDeviceState();
 }
 
